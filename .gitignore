@@ -1,0 +1,26 @@
+# Created by venv; see https://docs.python.org/3/library/venv.html
+
+# --- Python/Django 기본 제외 ---
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+
+# --- Django 관련 데이터 및 설정 ---
+db.sqlite3
+db.sqlite3-journal
+staticfiles/
+
+# --- 미디어 파일 (보안 및 용량 관리) ---
+# 사용자가 업로드한 이미지는 서버마다 다르므로 공유하지 않습니다.
+media/
+
+# --- 운영체제/에디터 설정 파일 ---
+.DS_Store
+.vscode/
+.idea/
+*.swp
+
+# --- 배포 관련 로그 ---
+*.log

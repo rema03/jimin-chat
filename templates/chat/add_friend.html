@@ -1,0 +1,18 @@
+<div style="max-width: 400px; margin: 50px auto; text-align: center; font-family: sans-serif;">
+    <h2>친구 찾기</h2>
+    <form method="post">
+        {% csrf_token %}
+        <input type="text" name="username" placeholder="친구 아이디를 입력하세요" required 
+               style="width: 80%; padding: 10px; margin-bottom: 10px; border-radius: 5px; border: 1px solid #ddd;">
+        <br>
+        <button type="submit" style="padding: 10px 20px; background: #4e73df; color: white; border: none; border-radius: 5px; cursor: pointer;">추가하기</button>
+    </form>
+    
+    {% if messages %}
+        {% for message in messages %}
+            <p style="color: red; margin-top: 10px;">{{ message }}</p>
+        {% endfor %}
+    {% endif %}
+    <br>
+    <a href="{% url 'chat:friend_list' %}" style="color: #888;">돌아가기</a>
+</div>

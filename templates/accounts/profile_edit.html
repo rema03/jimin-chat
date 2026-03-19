@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>프로필 수정 - Jimin Chat</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { font-family: 'Pretendard', sans-serif; background: #f0f2f5; margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 400px; margin: 50px auto; background: white; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); overflow: hidden; padding: 30px; }
+        
+        h2 { color: #4e73df; text-align: center; margin-bottom: 30px; }
+        
+        /* 폼 스타일링 */
+        form p { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; color: #555; font-size: 0.9rem; }
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            box-sizing: border-box; /* 패딩이 너비에 포함되도록 */
+            font-size: 1rem;
+        }
+        input:focus { outline: none; border-color: #4e73df; box-shadow: 0 0 5px rgba(78, 115, 223, 0.2); }
+
+        /* 버튼 스타일 */
+        .btn-group { margin-top: 30px; }
+        .save-btn {
+            width: 100%;
+            background: #4e73df;
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-bottom: 10px;
+        }
+        .save-btn:hover { background: #2e59d9; }
+        
+        .back-link {
+            display: block;
+            text-align: center;
+            color: #888;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        .back-link:hover { text-decoration: underline; }
+
+        /* 에러 메시지 */
+        .errorlist { color: #e74a3b; font-size: 0.85rem; padding-left: 0; list-style: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>프로필 수정</h2>
+    
+    <form method="post">
+        {% csrf_token %}
+        
+        {% for field in form %}
+            <div style="margin-bottom: 20px;">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}
+                    <ul class="errorlist">
+                        {% for error in field.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+        {% endfor %}
+
+        <div class="btn-group">
+            <button type="submit" class="save-btn">저장하기</button>
+            <a href="{% url 'chat:friend_list' %}" class="back-link">취소하고 돌아가기</a>
+        </div>
+    </form>
+</div>
+
+</body>
+</html>

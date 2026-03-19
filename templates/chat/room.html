@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ display_title }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: 'Pretendard', sans-serif; background: #abc1d1; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .container { width: 100%; max-width: 450px; background: white; border-radius: 30px; display: flex; flex-direction: column; height: 90vh; overflow: hidden; }
+        .header { background: white; padding: 15px 20px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; justify-content: space-between; }
+        .chat-area { flex: 1; padding: 20px; overflow-y: scroll; display: flex; flex-direction: column; gap: 12px; background: #abc1d1; }
+        
+        /* 메시지 & 시간 레이아웃 */
+        .message-wrapper { display: flex; align-items: flex-end; gap: 5px; max-width: 85%; }
+        .incoming-wrapper { align-self: flex-start; flex-direction: row; }
+        .outgoing-wrapper { align-self: flex-end; flex-direction: row-reverse; }
+        
+        .message-content { display: flex; flex-direction: column; }
+        .bubble { padding: 10px 14px; border-radius: 15px; font-size: 0.95rem; word-wrap: break-word; }
+        .incoming .bubble { background: white; border-radius: 0 15px 15px 15px; }
+        .outgoing .bubble { background: #fee500; border-radius: 15px 15px 0 15px; }
+        
+        .time-text { font-size: 0.65rem; color: #555; margin-bottom: 2px; white-space: nowrap; }
+        .chat-img { max-width: 200px; border-radius: 10px; margin-top: 5px; cursor: pointer; }
+
+        .input-bar { background: white; padding: 12px 15px; display: flex; gap: 10px; align-items: center; }
+        .image-plus { font-size: 1.5rem; color: #888; cursor: pointer; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <button onclick="location.href='{% url 'chat:friend_list' %}'" style="border:none; background:none; font-size:1.2rem; cursor:pointer;">&lsaquo;</button>
+        <h2 style="margin:0; font-size:1rem;">{{ display_title }}</h2>
+        {% if not is_friend %}<button onclick="addFriendViaAjax('{{ other_username }}')" id="add-btn" style="background:#5c7cfa; color:white; border:none; padding:5px 10px; border-radius:10px; font-size:0.75rem;">+ 친구</button>{% else %}<div></div>{% endif %}
+    </div>
+
+    <div id="chat-area" class="chat-area">
+        {% for msg in chat_messages %}
+        <div class="message-wrapper {% if msg.sender == user %}outgoing-wrapper{% else %}incoming-wrapper{% endif %}">
+            <div class="message-content {% if msg.sender == user %}outgoing{% else %}incoming{% endif %}">
+                {% if msg.sender != user %}<span style="font-size:0.7rem; margin-bottom:3px; color:#555;">{{ msg.sender.username }}</span>{% endif %}
+                <div class="bubble">
+                    {% if msg.image %}<img src="{{ msg.image.url }}" class="chat-img" onclick="window.open(this.src)">{% endif %}
+                    {% if msg.message %}{{ msg.message }}{% endif %}
+                </div>
+            </div>
+            <span class="time-text">{{ msg.timestamp|date:"A g:i" }}</span>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="input-bar">
+        <label for="image-input" class="image-plus">+</label>
+        <input type="file" id="image-input" style="display:none;" accept="image/*" onchange="uploadImage(this)">
+        <input id="chat-message-input" type="text" placeholder="메시지를 입력하세요" style="flex:1; border:1px solid #eee; padding:10px; border-radius:20px;">
+        <button id="chat-message-submit" style="background:#fee500; border:none; padding:10px 15px; border-radius:15px; font-weight:bold;">전송</button>
+    </div>
+</div>
+
+<script>
+    const roomName = "{{ room_name }}";
+    const currentUsername = "{{ user.username }}";
+    const chatSocket = new WebSocket('ws://' + window.location.host + '/ws/chat/' + roomName + '/');
+
+    chatSocket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        appendMessage(data.user, data.message, data.image_url);
+    };
+
+    function appendMessage(user, msg, imgUrl) {
+        const isOutgoing = (user === currentUsername);
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: true });
+        
+        const html = `
+            <div class="message-wrapper ${isOutgoing ? 'outgoing-wrapper' : 'incoming-wrapper'}">
+                <div class="message-content ${isOutgoing ? 'outgoing' : 'incoming'}">
+                    ${!isOutgoing ? `<span style="font-size:0.7rem; color:#555;">${user}</span>` : ''}
+                    <div class="bubble">
+                        ${imgUrl ? `<img src="${imgUrl}" class="chat-img" onclick="window.open(this.src)">` : ''}
+                        ${msg ? msg : ''}
+                    </div>
+                </div>
+                <span class="time-text">${timeStr}</span>
+            </div>`;
+        document.getElementById('chat-area').insertAdjacentHTML('beforeend', html);
+        scrollToBottom();
+    }
+
+    function uploadImage(input) {
+        if (!input.files[0]) return;
+        const formData = new FormData();
+        formData.append('image', input.files[0]);
+        formData.append('room_name', roomName);
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+        fetch('{% url "chat:upload_image" %}', { method: 'POST', body: formData })
+        .then(r => r.json()).then(data => {
+            if(data.status === 'success') chatSocket.send(JSON.stringify({'message': '', 'image_url': data.image_url}));
+        });
+    }
+
+    function send() {
+        const input = document.getElementById('chat-message-input');
+        if(input.value.trim()) { chatSocket.send(JSON.stringify({'message': input.value})); input.value = ''; }
+    }
+    document.getElementById('chat-message-submit').onclick = send;
+    document.getElementById('chat-message-input').onkeyup = (e) => { if(e.keyCode === 13) send(); };
+    function scrollToBottom() { const c = document.getElementById('chat-area'); c.scrollTop = c.scrollHeight; }
+    window.onload = scrollToBottom;
+</script>
+</body>
+</html>

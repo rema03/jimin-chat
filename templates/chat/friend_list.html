@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Jimin Chat</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        /* 전체 레이아웃 */
+        body { font-family: 'Pretendard', sans-serif; background: #f0f2f5; margin: 0; padding: 20px; display: flex; justify-content: center; min-height: 100vh; }
+        .container { width: 100%; max-width: 450px; background: white; border-radius: 30px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); overflow: hidden; height: fit-content; }
+        
+        /* 상단 프로필 섹션 */
+        .profile-section { background: #5c7cfa; color: white; padding: 35px 20px; text-align: center; }
+        .profile-section h2 { margin: 0; font-size: 1.5rem; font-weight: 800; }
+        .profile-section p { margin: 8px 0 15px; opacity: 0.9; font-size: 0.9rem; }
+        .btn-group { display: flex; justify-content: center; gap: 10px; }
+        .sub-btn { background: rgba(255,255,255,0.2); color: white; border: none; padding: 6px 15px; border-radius: 10px; cursor: pointer; font-size: 0.8rem; }
+
+        /* 탭 메뉴 */
+        .tabs { display: flex; background: #f8f9fa; border-bottom: 1px solid #eee; }
+        .tab-btn { flex: 1; padding: 16px; border: none; background: none; cursor: pointer; font-weight: 700; color: #adb5bd; font-size: 1rem; position: relative; }
+        .tab-btn.active { color: #5c7cfa; border-bottom: 3px solid #5c7cfa; background: white; }
+        
+        /* 알림 배지 */
+        .tab-badge { background: #ff6b6b; color: white; font-size: 0.7rem; padding: 2px 6px; border-radius: 10px; margin-left: 5px; position: absolute; top: 10px; right: 15%; }
+
+        /* 리스트 아이템 */
+        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 18px 25px; border-bottom: 1px solid #f8f9fa; cursor: pointer; transition: 0.2s; }
+        .list-item:hover { background: #f8faff; }
+        .friend-name { font-weight: 700; font-size: 1.05rem; color: #333; }
+        .friend-id { font-size: 0.85rem; color: #adb5bd; }
+        .unread-dot { background: #ff6b6b; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; }
+
+        /* 하단 추가 버튼 */
+        .add-btn-wrapper { padding: 20px; }
+        .primary-btn { background: #5c7cfa; color: white; border: none; padding: 16px; border-radius: 15px; cursor: pointer; font-weight: 700; width: 100%; font-size: 1rem; box-shadow: 0 4px 12px rgba(92, 124, 250, 0.2); }
+
+        /* 모달(관리 팝업) */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; backdrop-filter: blur(2px); }
+        .modal-content { background: white; width: 300px; margin: 25vh auto; border-radius: 25px; padding: 25px; text-align: center; }
+        .modal-btn { display: block; width: 100%; padding: 13px; margin: 10px 0; border: none; border-radius: 12px; cursor: pointer; font-weight: 700; }
+        .btn-chat { background: #5c7cfa; color: white; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="profile-section">
+        <h2>{{ user.name|default:user.username }}</h2>
+        <p>@{{ user.username }} | {{ user.age|default:"나이 미입력" }}세</p>
+        <div class="btn-group">
+            <button class="sub-btn" onclick="location.href='{% url 'profile_edit' %}'">수정</button>
+            <form action="{% url 'logout' %}" method="post" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="sub-btn">로그아웃</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab-btn active" id="friends-tab-btn" onclick="switchTab('friends')">친구</button>
+        <button class="tab-btn" id="chats-tab-btn" onclick="switchTab('chats')">
+            채팅
+            {% if unread_total > 0 %}<span class="tab-badge">{{ unread_total }}</span>{% endif %}
+        </button>
+    </div>
+
+    <div id="friends-content">
+        {% for friendship in friends %}
+        <div class="list-item" onclick="openMenu('{{ friendship.friend.username }}', '{{ friendship.nickname|default:friendship.friend.name }}')">
+            <div>
+                <span class="friend-name">{{ friendship.nickname|default:friendship.friend.name }}</span><br>
+                <span class="friend-id">@{{ friendship.friend.username }}</span>
+            </div>
+            <span style="color:#dee2e6;">&rsaquo;</span>
+        </div>
+        {% empty %}
+        <div style="text-align:center; padding:60px 0; color:#adb5bd;">친구를 추가해보세요!</div>
+        {% endfor %}
+        <div class="add-btn-wrapper">
+            <button class="primary-btn" onclick="location.href='{% url 'chat:add_friend' %}'">+ 친구 추가하기</button>
+        </div>
+    </div>
+
+    <div id="chats-content" style="display:none;">
+        {% for room in rooms %}
+        <div class="list-item" onclick="openChatPopup('{{ room.room_name }}')">
+            <div style="flex: 1;">
+                <span class="friend-name">{{ room.display_name }}</span><br>
+                <span class="friend-id">대화창 열기</span>
+            </div>
+            {% if room.unread_count > 0 %}
+                <span class="unread-dot">{{ room.unread_count }}</span>
+            {% endif %}
+        </div>
+        {% empty %}
+        <div style="text-align:center; padding:60px 0; color:#adb5bd;">진행 중인 채팅이 없습니다.</div>
+        {% endfor %}
+    </div>
+</div>
+
+<div id="friendModal" class="modal">
+    <div class="modal-content">
+        <h3 id="modalTitle" style="margin-top:0;">이름</h3>
+        <p id="modalSubTitle" style="color:#adb5bd; font-size:0.85rem; margin-bottom:20px;">@username</p>
+        
+        <button class="modal-btn btn-chat" id="chatGoBtn">채팅하기</button>
+        
+        <form action="{% url 'chat:update_nickname' %}" method="post" style="margin: 15px 0; display: flex; gap: 5px;">
+            {% csrf_token %}
+            <input type="hidden" name="friend_id" id="nick_friend_id">
+            <input type="text" name="nickname" placeholder="별명 수정" style="flex:1; padding:10px; border-radius:10px; border:1px solid #eee; outline:none;">
+            <button type="submit" style="padding:10px; border-radius:10px; border:none; background:#f1f3f5; cursor:pointer; font-weight:bold;">변경</button>
+        </form>
+
+        <form action="{% url 'chat:delete_friend' %}" method="post" onsubmit="return confirm('정말 삭제할까요?');">
+            {% csrf_token %}
+            <input type="hidden" name="friend_id" id="del_friend_id">
+            <button type="submit" class="modal-btn" style="background:#fff0f0; color:#ff6b6b;">친구 삭제</button>
+        </form>
+        <button class="modal-btn" style="background:none; color:#adb5bd;" onclick="closeMenu()">닫기</button>
+    </div>
+</div>
+
+<script>
+    // [핵심] 팝업창 실행 함수 (강력한 옵션 적용)
+    function openChatPopup(roomName) {
+        const width = 400;
+        const height = 650;
+        const left = (window.screen.width / 2) - (width / 2);
+        const top = (window.screen.height / 2) - (height / 2);
+        
+        const url = '/chat/room/' + roomName + '/';
+        const windowName = 'ChatPopup_' + roomName.replace(/[^a-zA-Z0-9]/g, '_'); // 안전한 창 이름 생성
+        
+        // 브라우저가 팝업으로 인식하게 만드는 specs
+        const specs = `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no,resizable=no,scrollbars=yes`;
+
+        const newWindow = window.open(url, windowName, specs);
+
+        if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
+            alert('팝업이 차단되었습니다! 주소창 우측의 팝업 차단 해제를 눌러주세요.');
+        } else {
+            newWindow.focus();
+        }
+    }
+
+    function switchTab(tab) {
+        document.getElementById('friends-content').style.display = tab === 'friends' ? 'block' : 'none';
+        document.getElementById('chats-content').style.display = tab === 'chats' ? 'block' : 'none';
+        document.getElementById('friends-tab-btn').classList.toggle('active', tab === 'friends');
+        document.getElementById('chats-tab-btn').classList.toggle('active', tab === 'chats');
+    }
+
+    function openMenu(userId, userName) {
+        document.getElementById('modalTitle').innerText = userName;
+        document.getElementById('modalSubTitle').innerText = '@' + userId;
+        document.getElementById('nick_friend_id').value = userId;
+        document.getElementById('del_friend_id').value = userId;
+        
+        document.getElementById('chatGoBtn').onclick = function() {
+            const me = "{{ user.username }}";
+            const roomName = [me, userId].sort().join('_');
+            openChatPopup(roomName); // 모달에서도 팝업으로 열기
+            closeMenu();
+        };
+        document.getElementById('friendModal').style.display = 'block';
+    }
+
+    function closeMenu() { document.getElementById('friendModal').style.display = 'none'; }
+    window.onclick = function(e) { if (e.target.className === 'modal') closeMenu(); }
+</script>
+</body>
+</html>
