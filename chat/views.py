@@ -1,125 +1,144 @@
-from django.shortcuts import render, get_object_or_404, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.contrib import messages
-from django.db.models import Q, Max, Count
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseForbidden
+from django.db.models import Q
 from accounts.models import User
 from .models import Friendship, ChatMessage
 
+
+def _get_other_username(room_name, current_username):
+    participants = room_name.split('_')
+    if len(participants) != 2 or current_username not in participants:
+        return None
+    return participants[1] if participants[0] == current_username else participants[0]
+
+
 @login_required
 def friend_list(request):
-    # 1. 친구 목록
-    friends = Friendship.objects.filter(user=request.user, is_blocked=False)
+    # 내 친구 목록 가져오기
+    friends = Friendship.objects.filter(user=request.user)
+    
+    # 읽지 않은 총 메시지 수
+    unread_total = ChatMessage.objects.filter(receiver=request.user, is_read=False).count()
 
-    # 2. 채팅 목록 및 알림 계산
-    rooms_query = ChatMessage.objects.filter(
-        Q(room_name__contains=f"_{request.user.username}") | Q(room_name__contains=f"{request.user.username}_")
-    ).values('room_name').annotate(
-        last_msg_text=Max('message'),
-        last_msg_time=Max('timestamp'),
-        unread_cnt=Count('id', filter=Q(is_read=False) & ~Q(sender=request.user))
-    ).order_by('-last_msg_time')
+    # 내가 참여한 채팅방 목록 추출
+    distinct_rooms = ChatMessage.objects.filter(
+        Q(sender=request.user) | Q(receiver=request.user)
+    ).values_list('room_name', flat=True).distinct()
 
-    processed_rooms = []
-    unread_total = 0
-    for r in rooms_query:
-        participants = r['room_name'].split('_')
-        if len(participants) < 2: continue
-        other_username = participants[0] if participants[1] == request.user.username else participants[1]
+    rooms = []
+    for r_name in distinct_rooms:
+        participants = r_name.split('_')
+        if request.user.username not in participants:
+            continue
+            
+        other_username = participants[1] if participants[0] == request.user.username else participants[0]
         try:
             other_user = User.objects.get(username=other_username)
             friendship = Friendship.objects.filter(user=request.user, friend=other_user).first()
-            display_name = friendship.nickname if friendship and friendship.nickname else other_user.name
+            
+            # 표시될 이름 결정 (별명 > 이름 > 아이디)
+            display_name = friendship.nickname if friendship and friendship.nickname else (other_user.name or other_user.username)
+            
+            # 해당 방의 읽지 않은 메시지 수
+            unread_count = ChatMessage.objects.filter(room_name=r_name, receiver=request.user, is_read=False).count()
+
+            rooms.append({
+                'room_name': r_name,
+                'display_name': display_name,
+                'unread_count': unread_count
+            })
         except User.DoesNotExist:
-            display_name = other_username
-        
-        unread_total += r['unread_cnt']
-        processed_rooms.append({
-            'room_name': r['room_name'], 
-            'display_name': display_name, 
-            'unread_count': r['unread_cnt'], 
-            'last_time': r['last_msg_time']
-        })
+            continue
 
     return render(request, 'chat/friend_list.html', {
-        'friends': friends, 
-        'rooms': processed_rooms, 
+        'friends': friends,
+        'rooms': rooms,
         'unread_total': unread_total
     })
 
 @login_required
 def room(request, room_name):
-    participants = room_name.split('_')
-    is_friend, other_username = False, None
-    if len(participants) == 2:
-        other_username = participants[0] if participants[1] == request.user.username else participants[1]
-        try:
-            other_user = User.objects.get(username=other_username)
-            friendship = Friendship.objects.filter(user=request.user, friend=other_user).first()
-            is_friend = True if friendship else False
-            display_title = f"{friendship.nickname if is_friend and friendship.nickname else other_user.name}({other_user.username})"
-        except User.DoesNotExist:
-            display_title = room_name
-    else:
-        display_title = room_name
+    other_username = _get_other_username(room_name, request.user.username)
+    if not other_username:
+        return HttpResponseForbidden("접근 권한이 없습니다.")
+    
+    try:
+        other_user = User.objects.get(username=other_username)
+        friendship = Friendship.objects.filter(user=request.user, friend=other_user).first()
+        display_title = friendship.nickname if friendship and friendship.nickname else (other_user.name or other_user.username)
+    except User.DoesNotExist:
+        display_title = other_username
 
-    ChatMessage.objects.filter(room_name=room_name).exclude(sender=request.user).update(is_read=True)
-    chat_messages = ChatMessage.objects.filter(room_name=room_name).order_by('timestamp')
+    # 메시지 로드 및 읽음 처리
+    messages = ChatMessage.objects.filter(room_name=room_name).order_by('timestamp')
+    ChatMessage.objects.filter(room_name=room_name, receiver=request.user, is_read=False).update(is_read=True)
+
     return render(request, 'chat/room.html', {
-        'room_name': room_name, 
-        'display_title': display_title, 
-        'other_username': other_username, 
-        'is_friend': is_friend, 
-        'chat_messages': chat_messages
+        'room_name': room_name,
+        'chat_messages': messages,
+        'display_title': display_title,
+        'other_username': other_username
     })
-
-@login_required
-def upload_image(request):
-    if request.method == 'POST' and request.FILES.get('image'):
-        room_name = request.POST.get('room_name')
-        img_file = request.FILES.get('image')
-        msg = ChatMessage.objects.create(sender=request.user, room_name=room_name, image=img_file)
-        return JsonResponse({'status': 'success', 'image_url': msg.image.url, 'user': request.user.username})
-    return JsonResponse({'status': 'error'})
-
-@login_required
-def add_friend_ajax(request):
-    if request.method == 'POST':
-        friend_username = request.POST.get('friend_username')
-        try:
-            target_user = User.objects.get(username=friend_username)
-            Friendship.objects.get_or_create(user=request.user, friend=target_user)
-            return JsonResponse({'status': 'success'})
-        except User.DoesNotExist:
-            return JsonResponse({'status': 'error', 'message': '유저 없음'})
-    return JsonResponse({'status': 'error'})
 
 @login_required
 def add_friend(request):
     if request.method == 'POST':
-        username = request.POST.get('username')
+        friend_id = request.POST.get('friend_id')
         try:
-            target_user = User.objects.get(username=username)
-            if target_user != request.user and not Friendship.objects.filter(user=request.user, friend=target_user).exists():
-                Friendship.objects.create(user=request.user, friend=target_user)
-                return redirect('chat:friend_list')
+            friend_user = User.objects.get(username=friend_id)
+            if friend_user == request.user:
+                return render(request, 'chat/add_friend.html', {'error': '자기 자신은 추가할 수 없습니다.'})
+            
+            Friendship.objects.get_or_create(user=request.user, friend=friend_user)
+            return redirect('chat:friend_list')
         except User.DoesNotExist:
-            messages.error(request, "유저가 없습니다.")
+            return render(request, 'chat/add_friend.html', {'error': '존재하지 않는 아이디입니다.'})
+            
     return render(request, 'chat/add_friend.html')
 
+# --- 에러가 났던 부분: 별명 수정 함수 추가 ---
 @login_required
 def update_nickname(request):
     if request.method == 'POST':
         friend_id = request.POST.get('friend_id')
         new_nickname = request.POST.get('nickname')
-        friendship = get_object_or_404(Friendship, user=request.user, friend__username=friend_id)
-        friendship.nickname = new_nickname
-        friendship.save()
+        friend_user = get_object_or_404(User, username=friend_id)
+        
+        friendship = Friendship.objects.filter(user=request.user, friend=friend_user).first()
+        if friendship:
+            friendship.nickname = new_nickname
+            friendship.save()
+            
     return redirect('chat:friend_list')
 
 @login_required
 def delete_friend(request):
     if request.method == 'POST':
         friend_id = request.POST.get('friend_id')
-        Friendship.objects.filter(user=request.user, friend__username=friend_id).delete()
+        friend_user = get_object_or_404(User, username=friend_id)
+        Friendship.objects.filter(user=request.user, friend=friend_user).delete()
+        
     return redirect('chat:friend_list')
+
+@login_required
+def upload_image(request):
+    if request.method == 'POST' and request.FILES.get('image'):
+        image = request.FILES['image']
+        room_name = request.POST.get('room_name')
+
+        other_username = _get_other_username(room_name, request.user.username)
+        if not other_username:
+            return JsonResponse({'error': 'Permission denied'}, status=403)
+
+        receiver = get_object_or_404(User, username=other_username)
+
+        msg = ChatMessage.objects.create(
+            sender=request.user,
+            receiver=receiver,
+            room_name=room_name,
+            image=image
+        )
+        return JsonResponse({'image_url': msg.image.url})
+    
+    return JsonResponse({'error': 'Invalid request'}, status=400)

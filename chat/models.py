@@ -1,23 +1,26 @@
 from django.db import models
-from django.conf import settings
+from accounts.models import User
 
 class Friendship(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='friends')
-    friend = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='friend_of')
-    nickname = models.CharField(max_length=50, blank=True, null=True)
-    is_blocked = models.BooleanField(default=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='friendships')
+    friend = models.ForeignKey(User, on_delete=models.CASCADE)
+    nickname = models.CharField(max_length=100, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         unique_together = ('user', 'friend')
 
-class ChatMessage(models.Model):
-    room_name = models.CharField(max_length=255)
-    sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    message = models.TextField(blank=True, null=True)
-    image = models.ImageField(upload_to='chat_images/', blank=True, null=True) # 이미지 필드 추가
-    timestamp = models.DateTimeField(auto_now_add=True)
-    is_read = models.BooleanField(default=False)
+    def __str__(self):
+        return f"{self.user.username} -> {self.friend.username}"
 
-    class Meta:
-        ordering = ['timestamp']
+class ChatMessage(models.Model):
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
+    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_messages')
+    room_name = models.CharField(max_length=255)
+    message = models.TextField(blank=True, null=True)
+    image = models.ImageField(upload_to='chat_images/', blank=True, null=True)
+    is_read = models.BooleanField(default=False)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"[{self.room_name}] {self.sender.username}: {self.message[:20] if self.message else 'Image Sent'}"

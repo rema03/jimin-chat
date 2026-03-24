@@ -1,18 +1,46 @@
-<div style="max-width: 400px; margin: 50px auto; text-align: center; font-family: sans-serif;">
-    <h2>친구 찾기</h2>
-    <form method="post">
-        {% csrf_token %}
-        <input type="text" name="username" placeholder="친구 아이디를 입력하세요" required 
-               style="width: 80%; padding: 10px; margin-bottom: 10px; border-radius: 5px; border: 1px solid #ddd;">
-        <br>
-        <button type="submit" style="padding: 10px 20px; background: #4e73df; color: white; border: none; border-radius: 5px; cursor: pointer;">추가하기</button>
-    </form>
-    
-    {% if messages %}
-        {% for message in messages %}
-            <p style="color: red; margin-top: 10px;">{{ message }}</p>
-        {% endfor %}
-    {% endif %}
-    <br>
-    <a href="{% url 'chat:friend_list' %}" style="color: #888;">돌아가기</a>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>친구 추가 - Jimin Chat</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .add-friend-container { max-width: 400px; margin-top: 100px; }
+    </style>
+</head>
+<body>
+
+<div class="container add-friend-container">
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white text-center py-3">
+            <h5 class="mb-0">새 친구 추가</h5>
+        </div>
+        <div class="card-body p-4">
+            <form method="POST" action="{% url 'chat:add_friend' %}">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="friend_id" class="form-label fw-bold">친구 아이디</label>
+                    <input type="text" name="friend_id" class="form-control form-control-lg" id="friend_id" placeholder="상대방 ID 입력" required>
+                </div>
+
+                {% if error %}
+                <div class="alert alert-danger py-2" role="alert">
+                    <small>{{ error }}</small>
+                </div>
+                {% endif %}
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary btn-lg">추가하기</button>
+                    <a href="{% url 'chat:friend_list' %}" class="btn btn-outline-secondary">취소</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    <p class="text-center mt-3 text-muted"><small>Jimin Chat v1.1</small></p>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

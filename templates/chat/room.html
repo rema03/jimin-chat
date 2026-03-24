@@ -1,44 +1,53 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>{{ display_title }}</title>
+    <meta charset="UTF-8">
+    <title>{{ display_title|default:"채팅" }}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body { font-family: 'Pretendard', sans-serif; background: #abc1d1; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .container { width: 100%; max-width: 450px; background: white; border-radius: 30px; display: flex; flex-direction: column; height: 90vh; overflow: hidden; }
-        .header { background: white; padding: 15px 20px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; justify-content: space-between; }
-        .chat-area { flex: 1; padding: 20px; overflow-y: scroll; display: flex; flex-direction: column; gap: 12px; background: #abc1d1; }
+        body { font-family: 'Pretendard', sans-serif; background: #2c3e50; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; color: #ffffff; }
+        .container { width: 100%; max-width: 450px; background: #34495e; border-radius: 20px; display: flex; flex-direction: column; height: 95vh; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         
-        /* 메시지 & 시간 레이아웃 */
+        /* 헤더: 팝업 느낌을 위해 더 심플하게 */
+        .header { background: #34495e; padding: 12px 15px; border-bottom: 1px solid #5d6d7e; display: flex; align-items: center; justify-content: space-between; }
+        .back-btn { border:none; background:none; font-size: 1.8rem; cursor:pointer; color: #ffffff; padding: 0 10px; }
+        .room-title { margin:0; font-size: 1.1rem; font-weight: bold; flex: 1; text-align: center; margin-right: 40px; color: #ffffff; }
+
+        .chat-area { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background: #2c3e50; }
+        
+        /* 말풍선 디자인 */
         .message-wrapper { display: flex; align-items: flex-end; gap: 5px; max-width: 85%; }
         .incoming-wrapper { align-self: flex-start; flex-direction: row; }
         .outgoing-wrapper { align-self: flex-end; flex-direction: row-reverse; }
         
-        .message-content { display: flex; flex-direction: column; }
-        .bubble { padding: 10px 14px; border-radius: 15px; font-size: 0.95rem; word-wrap: break-word; }
-        .incoming .bubble { background: white; border-radius: 0 15px 15px 15px; }
-        .outgoing .bubble { background: #fee500; border-radius: 15px 15px 0 15px; }
+        .bubble { padding: 10px 14px; border-radius: 15px; font-size: 0.95rem; line-height: 1.4; word-break: break-all; }
+        .incoming .bubble { background: #4ecdc4; color: #ffffff; border-top-left-radius: 0; }
+        .outgoing .bubble { background: #ff6b6b; color: #ffffff; border-top-right-radius: 0; }
         
-        .time-text { font-size: 0.65rem; color: #555; margin-bottom: 2px; white-space: nowrap; }
-        .chat-img { max-width: 200px; border-radius: 10px; margin-top: 5px; cursor: pointer; }
+        .time-text { font-size: 0.6rem; color: #bdc3c7; white-space: nowrap; margin-bottom: 2px; }
+        .chat-img { max-width: 100%; border-radius: 10px; margin-top: 5px; display: block; cursor: pointer; }
 
-        .input-bar { background: white; padding: 12px 15px; display: flex; gap: 10px; align-items: center; }
-        .image-plus { font-size: 1.5rem; color: #888; cursor: pointer; }
+        /* 입력바 */
+        .input-bar { background: #34495e; padding: 10px 15px; display: flex; gap: 10px; align-items: center; border-top: 1px solid #5d6d7e; }
+        .image-plus { font-size: 1.8rem; color: #ffffff; cursor: pointer; }
+        #chat-message-input { flex: 1; border: 1px solid #5d6d7e; padding: 10px 15px; border-radius: 20px; outline: none; background: #5d6d7e; color: #ffffff; }
+        #chat-message-submit { background: #ff6b6b; border: none; padding: 10px 15px; border-radius: 15px; font-weight: bold; cursor: pointer; color: #ffffff; }
     </style>
 </head>
 <body>
 <div class="container">
     <div class="header">
-        <button onclick="location.href='{% url 'chat:friend_list' %}'" style="border:none; background:none; font-size:1.2rem; cursor:pointer;">&lsaquo;</button>
-        <h2 style="margin:0; font-size:1rem;">{{ display_title }}</h2>
-        {% if not is_friend %}<button onclick="addFriendViaAjax('{{ other_username }}')" id="add-btn" style="background:#5c7cfa; color:white; border:none; padding:5px 10px; border-radius:10px; font-size:0.75rem;">+ 친구</button>{% else %}<div></div>{% endif %}
+        <button class="back-btn" onclick="history.length > 1 ? history.back() : window.close()">&lsaquo;</button>
+        <h2 class="room-title">{{ display_title|default:room_name }}</h2>
     </div>
 
     <div id="chat-area" class="chat-area">
         {% for msg in chat_messages %}
         <div class="message-wrapper {% if msg.sender == user %}outgoing-wrapper{% else %}incoming-wrapper{% endif %}">
             <div class="message-content {% if msg.sender == user %}outgoing{% else %}incoming{% endif %}">
-                {% if msg.sender != user %}<span style="font-size:0.7rem; margin-bottom:3px; color:#555;">{{ msg.sender.username }}</span>{% endif %}
+                {% if msg.sender != user %}
+                    <span style="font-size:0.7rem; color:#444; margin-bottom:2px; display:block;">{{ msg.sender.username }}</span>
+                {% endif %}
                 <div class="bubble">
                     {% if msg.image %}<img src="{{ msg.image.url }}" class="chat-img" onclick="window.open(this.src)">{% endif %}
                     {% if msg.message %}{{ msg.message }}{% endif %}
@@ -52,30 +61,31 @@
     <div class="input-bar">
         <label for="image-input" class="image-plus">+</label>
         <input type="file" id="image-input" style="display:none;" accept="image/*" onchange="uploadImage(this)">
-        <input id="chat-message-input" type="text" placeholder="메시지를 입력하세요" style="flex:1; border:1px solid #eee; padding:10px; border-radius:20px;">
-        <button id="chat-message-submit" style="background:#fee500; border:none; padding:10px 15px; border-radius:15px; font-weight:bold;">전송</button>
+        <input id="chat-message-input" type="text" placeholder="메시지 입력" autocomplete="off">
+        <button id="chat-message-submit">전송</button>
     </div>
 </div>
 
 <script>
     const roomName = "{{ room_name }}";
     const currentUsername = "{{ user.username }}";
-    const chatSocket = new WebSocket('ws://' + window.location.host + '/ws/chat/' + roomName + '/');
+    const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+    const chatSocket = new WebSocket(protocol + window.location.host + '/ws/chat/' + roomName + '/');
 
     chatSocket.onmessage = function(e) {
         const data = JSON.parse(e.data);
-        appendMessage(data.user, data.message, data.image_url);
+        appendMessage(data.sender, data.message, data.image_url);
     };
 
-    function appendMessage(user, msg, imgUrl) {
-        const isOutgoing = (user === currentUsername);
-        const now = new Date();
-        const timeStr = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: true });
+    function appendMessage(sender, msg, imgUrl) {
+        if(!sender) return;
+        const isMe = (sender === currentUsername);
+        const timeStr = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: true });
         
         const html = `
-            <div class="message-wrapper ${isOutgoing ? 'outgoing-wrapper' : 'incoming-wrapper'}">
-                <div class="message-content ${isOutgoing ? 'outgoing' : 'incoming'}">
-                    ${!isOutgoing ? `<span style="font-size:0.7rem; color:#555;">${user}</span>` : ''}
+            <div class="message-wrapper ${isMe ? 'outgoing-wrapper' : 'incoming-wrapper'}">
+                <div class="message-content ${isMe ? 'outgoing' : 'incoming'}">
+                    ${!isMe ? `<span style="font-size:0.7rem; color:#444; margin-bottom:2px; display:block;">${sender}</span>` : ''}
                     <div class="bubble">
                         ${imgUrl ? `<img src="${imgUrl}" class="chat-img" onclick="window.open(this.src)">` : ''}
                         ${msg ? msg : ''}
@@ -96,13 +106,19 @@
 
         fetch('{% url "chat:upload_image" %}', { method: 'POST', body: formData })
         .then(r => r.json()).then(data => {
-            if(data.status === 'success') chatSocket.send(JSON.stringify({'message': '', 'image_url': data.image_url}));
+            if(data.image_url) {
+                chatSocket.send(JSON.stringify({'message': '', 'image_url': data.image_url}));
+                input.value = '';
+            }
         });
     }
 
     function send() {
         const input = document.getElementById('chat-message-input');
-        if(input.value.trim()) { chatSocket.send(JSON.stringify({'message': input.value})); input.value = ''; }
+        if(input.value.trim()) { 
+            chatSocket.send(JSON.stringify({'message': input.value})); 
+            input.value = ''; 
+        }
     }
     document.getElementById('chat-message-submit').onclick = send;
     document.getElementById('chat-message-input').onkeyup = (e) => { if(e.keyCode === 13) send(); };
