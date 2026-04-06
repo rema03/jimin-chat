@@ -1,13 +1,56 @@
 import os
+import socket
 from pathlib import Path
+
+try:
+    from dotenv import load_dotenv
+except ImportError:  # pragma: no cover - optional dependency fallback
+    def load_dotenv(*args, **kwargs):
+        return False
 
 # 1. 기본 경로 설정 (가장 상단에 위치해야 에러가 나지 않습니다)
 BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / '.env')
+
+
+def env_to_bool(name, default=False):
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {'1', 'true', 'yes', 'on'}
+
+
+def env_to_list(name, default=''):
+    raw_value = os.getenv(name, default)
+    return [item.strip() for item in raw_value.split(',') if item.strip()]
+
+
+def get_local_dev_hosts():
+    hosts = {'127.0.0.1', 'localhost', '::1', 'testserver'}
+
+    try:
+        hostname = socket.gethostname()
+        hosts.add(hostname)
+        hosts.update(socket.gethostbyname_ex(hostname)[2])
+        for family, _, _, _, sockaddr in socket.getaddrinfo(hostname, None):
+            if family in {socket.AF_INET, socket.AF_INET6} and sockaddr:
+                hosts.add(sockaddr[0])
+    except OSError:
+        pass
+
+    return sorted(hosts)
+
+
+APP_NAME = os.getenv('APP_NAME', 'Jimin Chat')
+APP_TAGLINE = os.getenv('APP_TAGLINE', '친구들과 실시간으로 대화하세요')
+APP_VERSION = os.getenv('APP_VERSION', '1.2')
 
 # 2. 보안 설정 (배포 시 관리 필요)
-SECRET_KEY = 'django-insecure-your-secret-key-here' # 실제 배포 시에는 환경변수로 숨겨야 합니다.
-DEBUG = True # 배포 시 False로 변경하세요.
-ALLOWED_HOSTS = ['*'] # 배포 시 ['your-domain.com']으로 제한하세요.
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-local-dev-key')
+DEBUG = env_to_bool('DJANGO_DEBUG', default=True)
+ALLOWED_HOSTS = env_to_list('DJANGO_ALLOWED_HOSTS', default='127.0.0.1,localhost')
+if DEBUG:
+    ALLOWED_HOSTS = sorted(set(ALLOWED_HOSTS) | set(get_local_dev_hosts()))
 
 # 3. 애플리케이션 정의
 INSTALLED_APPS = [
@@ -46,6 +89,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'config.context_processors.app_meta',
             ],
         },
     },

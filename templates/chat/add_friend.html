@@ -1,46 +1,39 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>친구 추가 - Jimin Chat</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body { background-color: #f8f9fa; }
-        .add-friend-container { max-width: 400px; margin-top: 100px; }
-    </style>
-</head>
-<body>
+{% extends "base.html" %}
 
-<div class="container add-friend-container">
-    <div class="card shadow-sm">
-        <div class="card-header bg-primary text-white text-center py-3">
-            <h5 class="mb-0">새 친구 추가</h5>
+{% block page_title %}친구 추가 - {{ app_name }}{% endblock %}
+
+{% block layout %}
+<main class="auth-shell">
+    <section class="panel-card">
+        <a href="{% url 'chat:friend_list' %}" class="brand-mark">
+            <span class="brand-mark__dot"></span>
+            <span>{{ app_name }}</span>
+        </a>
+
+        <div class="page-header">
+            <p class="eyebrow">New Friend</p>
+            <h1 class="page-title">함께 대화할 친구를 초대해보세요</h1>
+            <p class="page-subtitle">상대방의 아이디를 정확히 입력하면 바로 친구 목록에 추가할 수 있습니다.</p>
         </div>
-        <div class="card-body p-4">
-            <form method="POST" action="{% url 'chat:add_friend' %}">
-                {% csrf_token %}
-                <div class="mb-3">
-                    <label for="friend_id" class="form-label fw-bold">친구 아이디</label>
-                    <input type="text" name="friend_id" class="form-control form-control-lg" id="friend_id" placeholder="상대방 ID 입력" required>
-                </div>
 
-                {% if error %}
-                <div class="alert alert-danger py-2" role="alert">
-                    <small>{{ error }}</small>
-                </div>
-                {% endif %}
+        <form method="post" action="{% url 'chat:add_friend' %}" class="form-stack">
+            {% csrf_token %}
+            <div class="form-field">
+                <label for="friend_id" class="field-label">친구 아이디</label>
+                <input type="text" name="friend_id" id="friend_id" class="app-input" placeholder="상대방 ID 입력" required autocomplete="username">
+            </div>
 
-                <div class="d-grid gap-2">
-                    <button type="submit" class="btn btn-primary btn-lg">추가하기</button>
-                    <a href="{% url 'chat:friend_list' %}" class="btn btn-outline-secondary">취소</a>
-                </div>
-            </form>
-        </div>
-    </div>
-    <p class="text-center mt-3 text-muted"><small>Jimin Chat v1.1</small></p>
-</div>
+            {% if error %}
+                <div class="feedback-box">{{ error }}</div>
+            {% endif %}
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+            <div class="button-row">
+                <button type="submit" class="btn-app">추가하기</button>
+                <a href="{% url 'chat:friend_list' %}" class="btn-app-ghost text-center">취소</a>
+            </div>
+        </form>
+
+        <p class="inline-note">{{ app_name }} v{{ app_version }}</p>
+    </section>
+</main>
+{% endblock %}

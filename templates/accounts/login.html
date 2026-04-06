@@ -1,48 +1,37 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>로그인 - Jimin Chat</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <style>
-        body { font-family: 'Pretendard', sans-serif; background: #f0f2f5; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .login-container { width: 100%; max-width: 400px; background: white; border-radius: 30px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); padding: 40px; box-sizing: border-box; text-align: center; }
-        
-        .logo { font-size: 2rem; font-weight: 800; color: #5c7cfa; margin-bottom: 10px; display: block; text-decoration: none; }
-        .subtitle { color: #868e96; font-size: 0.9rem; margin-bottom: 40px; }
+{% extends "base.html" %}
 
-        /* 폼 스타일 */
-        form p { margin-bottom: 20px; text-align: left; }
-        label { display: block; margin-bottom: 8px; font-weight: 700; color: #495057; font-size: 0.85rem; }
-        input[type="text"], input[type="password"] {
-            width: 100%; padding: 14px; border: 2px solid #f1f3f5; border-radius: 12px; box-sizing: border-box; font-size: 1rem; transition: 0.2s;
-        }
-        input:focus { outline: none; border-color: #5c7cfa; background: #f8faff; }
+{% block page_title %}로그인 - {{ app_name }}{% endblock %}
 
-        .login-btn {
-            width: 100%; background: #5c7cfa; color: white; border: none; padding: 16px; border-radius: 15px; font-size: 1rem; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(92, 124, 250, 0.3); margin: 20px 0; transition: 0.2s;
-        }
-        .login-btn:hover { background: #4c6ef5; transform: translateY(-2px); }
-        
-        .footer-links { font-size: 0.85rem; color: #adb5bd; margin-top: 20px; }
-        .footer-links a { color: #5c7cfa; text-decoration: none; font-weight: 700; margin: 0 5px; }
-    </style>
-</head>
-<body>
+{% block layout %}
+<main class="auth-shell">
+    <section class="auth-card">
+        <a href="{% url 'home' %}" class="brand-mark">
+            <span class="brand-mark__dot"></span>
+            <span>{{ app_name }}</span>
+        </a>
 
-<div class="login-container">
-    <a href="#" class="logo">Jimin Chat</a>
-    <div class="subtitle">친구들과 실시간으로 대화하세요</div>
+        <div class="page-header">
+            <p class="eyebrow">Welcome Back</p>
+            <h1 class="page-title">대화를 이어갈 시간이에요</h1>
+            <p class="page-subtitle">{{ app_tagline }}</p>
+        </div>
 
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="login-btn">로그인</button>
-    </form>
+        <form method="post" class="form-stack">
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+                <div class="feedback-box">{{ form.non_field_errors|join:", " }}</div>
+            {% endif %}
+            {% for field in form %}
+                {% include "includes/form_field.html" with field=field %}
+            {% endfor %}
+            <div class="button-row">
+                <button type="submit" class="btn-app">로그인</button>
+            </div>
+        </form>
 
-    <div class="footer-links">
-        계정이 없으신가요? <a href="{% url 'signup' %}">회원가입</a>
-    </div>
-</div>
-
-</body>
-</html>
+        <p class="inline-note">
+            계정이 없으신가요? <a href="{% url 'signup' %}">회원가입</a>
+        </p>
+    </section>
+</main>
+{% endblock %}

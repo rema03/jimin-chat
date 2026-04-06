@@ -1,61 +1,37 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>회원가입 - Jimin Chat</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <style>
-        body { font-family: 'Pretendard', sans-serif; background: #f0f2f5; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
-        .signup-container { width: 100%; max-width: 450px; background: white; border-radius: 30px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); padding: 40px; box-sizing: border-box; }
-        
-        h2 { color: #5c7cfa; text-align: center; margin-bottom: 10px; font-weight: 800; font-size: 1.8rem; }
-        .subtitle { text-align: center; color: #868e96; font-size: 0.9rem; margin-bottom: 35px; }
+{% extends "base.html" %}
 
-        /* 폼 요소 스타일링 */
-        form p { margin-bottom: 18px; }
-        label { display: block; margin-bottom: 6px; font-weight: 700; color: #495057; font-size: 0.85rem; }
-        input {
-            width: 100%; padding: 12px; border: 2px solid #f1f3f5; border-radius: 12px; box-sizing: border-box; font-size: 0.95rem; transition: 0.2s;
-        }
-        input:focus { outline: none; border-color: #5c7cfa; background: #f8faff; }
-        
-        /* 도움말 텍스트 (비밀번호 규칙 등) */
-        .helptext { display: block; font-size: 0.75rem; color: #adb5bd; margin-top: 4px; line-height: 1.4; }
+{% block page_title %}회원가입 - {{ app_name }}{% endblock %}
 
-        .signup-btn {
-            width: 100%; background: #5c7cfa; color: white; border: none; padding: 16px; border-radius: 15px; font-size: 1rem; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(92, 124, 250, 0.3); margin-top: 25px; transition: 0.2s;
-        }
-        .signup-btn:hover { background: #4c6ef5; transform: translateY(-2px); }
+{% block layout %}
+<main class="auth-shell">
+    <section class="auth-card">
+        <a href="{% url 'home' %}" class="brand-mark">
+            <span class="brand-mark__dot"></span>
+            <span>{{ app_name }}</span>
+        </a>
 
-        .back-link { display: block; text-align: center; margin-top: 25px; font-size: 0.85rem; color: #adb5bd; text-decoration: none; }
-        .back-link span { color: #5c7cfa; font-weight: 700; }
-    </style>
-</head>
-<body>
+        <div class="page-header">
+            <p class="eyebrow">New Account</p>
+            <h1 class="page-title">새로운 대화 공간을 준비해볼까요?</h1>
+            <p class="page-subtitle">{{ app_name }}에서 친구와 바로 연결될 수 있도록 기본 정보를 입력해주세요.</p>
+        </div>
 
-<div class="signup-container">
-    <h2>회원가입</h2>
-    <div class="subtitle">Jimin Chat의 새로운 가족이 되어보세요</div>
-
-    <form method="post">
-        {% csrf_token %}
-        {% for field in form %}
-            <div style="margin-bottom: 15px;">
-                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                {{ field }}
-                {% if field.help_text %}
-                    <span class="helptext">{{ field.help_text|safe }}</span>
-                {% endif %}
-                {% for error in field.errors %}
-                    <span style="color: #ff6b6b; font-size: 0.75rem;">{{ error }}</span>
-                {% endfor %}
+        <form method="post" class="form-stack">
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+                <div class="feedback-box">{{ form.non_field_errors|join:", " }}</div>
+            {% endif %}
+            {% for field in form %}
+                {% include "includes/form_field.html" with field=field %}
+            {% endfor %}
+            <div class="button-row">
+                <button type="submit" class="btn-app-secondary">가입하기</button>
             </div>
-        {% endfor %}
+        </form>
 
-        <button type="submit" class="signup-btn">가입하기</button>
-    </form>
-
-    <a href="{% url 'login' %}" class="back-link">이미 계정이 있으신가요? <span>로그인</span></a>
-</div>
-
-</body>
-</html>
+        <p class="inline-note">
+            이미 계정이 있으신가요? <a href="{% url 'login' %}">로그인</a>
+        </p>
+    </section>
+</main>
+{% endblock %}
