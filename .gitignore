@@ -1,26 +1,57 @@
-# Created by venv; see https://docs.python.org/3/library/venv.html
-
-# --- Python/Django 기본 제외 ---
+# --- Python 캐시/바이트코드 ---
 __pycache__/
 *.py[cod]
 *$py.class
-venv/
-.env
 
-# --- Django 관련 데이터 및 설정 ---
+# --- 가상환경 ---
+.venv/
+venv/
+env/
+ENV/
+.python-version
+
+# --- 환경 변수 파일 ---
+.env
+.env.*
+!.env.example
+
+# --- Django 런타임 산출물 ---
 db.sqlite3
 db.sqlite3-journal
+*.sqlite3
+*.sqlite3-journal
 staticfiles/
 
-# --- 미디어 파일 (보안 및 용량 관리) ---
-# 사용자가 업로드한 이미지는 서버마다 다르므로 공유하지 않습니다.
+# --- 사용자 업로드 파일 ---
+# 업로드 파일은 개발/운영 환경마다 달라서 저장소에서 제외합니다.
 media/
 
-# --- 운영체제/에디터 설정 파일 ---
+# --- 테스트/도구 캐시 ---
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.pyre/
+.hypothesis/
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+
+# --- 패키징 산출물 ---
+build/
+dist/
+.eggs/
+*.egg-info/
+pip-wheel-metadata/
+
+# --- 로그 ---
+*.log
+
+# --- 운영체제/에디터 파일 ---
 .DS_Store
+Thumbs.db
 .vscode/
 .idea/
 *.swp
-
-# --- 배포 관련 로그 ---
-*.log
+*.swo
