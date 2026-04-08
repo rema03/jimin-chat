@@ -4,11 +4,11 @@ from pathlib import Path
 
 try:
     from dotenv import load_dotenv
-except ImportError:  # pragma: no cover - optional dependency fallback
+except ImportError:  
     def load_dotenv(*args, **kwargs):
         return False
 
-# 1. 기본 경로 설정 (가장 상단에 위치해야 에러가 나지 않습니다)
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / '.env')
 
@@ -95,7 +95,7 @@ TEMPLATES = [
     },
 ]
 
-# 4. 서버 설정 (ASGI/Channels)
+# 서버 설정 (ASGI/Channels)
 WSGI_APPLICATION = 'config.wsgi.application'
 ASGI_APPLICATION = 'config.asgi.application'
 
