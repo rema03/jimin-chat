@@ -1,3 +1,7 @@
+
+https://jimindev.com/
+https://chat.jimindev.com/
+
 # Jimin Chat
 
 Django + Channels 기반의 1:1 실시간 채팅 웹 프로젝트입니다.  
