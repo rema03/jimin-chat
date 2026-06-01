@@ -51,6 +51,11 @@ DEBUG = env_to_bool('DJANGO_DEBUG', default=True)
 ALLOWED_HOSTS = env_to_list('DJANGO_ALLOWED_HOSTS', default='127.0.0.1,localhost')
 if DEBUG:
     ALLOWED_HOSTS = sorted(set(ALLOWED_HOSTS) | set(get_local_dev_hosts()))
+CSRF_TRUSTED_ORIGINS = env_to_list('DJANGO_CSRF_TRUSTED_ORIGINS', default='')
+USE_X_FORWARDED_HOST = env_to_bool('DJANGO_USE_X_FORWARDED_HOST', default=True)
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SESSION_COOKIE_SECURE = env_to_bool('DJANGO_SESSION_COOKIE_SECURE', default=not DEBUG)
+CSRF_COOKIE_SECURE = env_to_bool('DJANGO_CSRF_COOKIE_SECURE', default=not DEBUG)
 
 # 3. 애플리케이션 정의
 INSTALLED_APPS = [
@@ -110,7 +115,7 @@ CHANNEL_LAYERS = {
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': os.getenv('DJANGO_SQLITE_PATH', str(BASE_DIR / 'db.sqlite3')),
     }
 }
 
@@ -133,12 +138,12 @@ USE_I18N = True
 USE_TZ = True
 
 # 8. 정적 파일 및 미디어 파일 설정 (중요!)
-STATIC_URL = 'static/'
+STATIC_URL = os.getenv('DJANGO_STATIC_URL', '/static/')
 STATICFILES_DIRS = [BASE_DIR / 'static']
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATIC_ROOT = os.getenv('DJANGO_STATIC_ROOT', str(BASE_DIR / 'staticfiles'))
 
 # 이미지 업로드를 위한 설정
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_URL = os.getenv('DJANGO_MEDIA_URL', '/media/')
+MEDIA_ROOT = os.getenv('DJANGO_MEDIA_ROOT', os.path.join(BASE_DIR, 'media'))
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

@@ -8,12 +8,17 @@ __pycache__/
 venv/
 env/
 ENV/
+bin/
+lib/
+include/
 .python-version
 
-# --- 환경 변수 파일 ---
+# --- 환경 변수 및 비밀 정보 ---
 .env
 .env.*
 !.env.example
+secrets.json
+local_settings.py
 
 # --- Django 런타임 산출물 ---
 db.sqlite3
@@ -23,7 +28,6 @@ db.sqlite3-journal
 staticfiles/
 
 # --- 사용자 업로드 파일 ---
-# 업로드 파일은 개발/운영 환경마다 달라서 저장소에서 제외합니다.
 media/
 
 # --- 테스트/도구 캐시 ---
@@ -36,6 +40,7 @@ media/
 .nox/
 .coverage
 .coverage.*
+.cache
 htmlcov/
 
 # --- 패키징 산출물 ---
@@ -55,3 +60,6 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+.project
+.pydevproject
+.settings/
