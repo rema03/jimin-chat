@@ -5,12 +5,25 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import PasswordChangeView
 from .forms import CustomPasswordChangeForm, CustomUserCreationForm, UserProfileForm
 
+import urllib.parse
+from django.conf import settings
+from django.contrib.auth import logout as auth_logout
 
-class SignUpView(CreateView):
-    form_class = CustomUserCreationForm
-    success_url = reverse_lazy('login')
-    template_name = 'accounts/signup.html'
+def signup_view(request):
+    callback_url = request.build_absolute_uri('/')
+    redirect_url = f"{settings.ACCOUNTS_URL}/signup?callbackUrl={urllib.parse.quote(callback_url)}"
+    return redirect(redirect_url)
 
+def login_view(request):
+    callback_url = request.build_absolute_uri('/')
+    redirect_url = f"{settings.ACCOUNTS_URL}/login?callbackUrl={urllib.parse.quote(callback_url)}"
+    return redirect(redirect_url)
+
+def logout_view(request):
+    auth_logout(request)
+    callback_url = request.build_absolute_uri('/')
+    redirect_url = f"{settings.ACCOUNTS_URL}/logout?callbackUrl={urllib.parse.quote(callback_url)}"
+    return redirect(redirect_url)
 
 @login_required
 def profile_edit(request):

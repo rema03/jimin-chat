@@ -22,7 +22,8 @@
     box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
     min-height: 100%;
 }
 
@@ -619,6 +620,7 @@ textarea {
 }
 
 @media (max-width: 640px) {
+
     .auth-card,
     .panel-card {
         width: 100%;

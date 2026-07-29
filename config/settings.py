@@ -45,6 +45,9 @@ APP_NAME = os.getenv('APP_NAME', 'Jimin Chat')
 APP_TAGLINE = os.getenv('APP_TAGLINE', '친구들과 실시간으로 대화하세요')
 APP_VERSION = os.getenv('APP_VERSION', '1.2')
 
+ACCOUNTS_URL = os.getenv('ACCOUNTS_URL', 'http://accounts.localhost')
+JWT_SECRET = os.getenv('JWT_SECRET', 'dev-jwt-secret-change-in-production')
+
 # 2. 보안 설정 (배포 시 관리 필요)
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-local-dev-key')
 DEBUG = env_to_bool('DJANGO_DEBUG', default=True)
@@ -77,6 +80,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'accounts.middleware.JiminAccountsMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -128,8 +132,9 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 AUTH_USER_MODEL = 'accounts.User'
+LOGIN_URL = f"{ACCOUNTS_URL}/login"
 LOGIN_REDIRECT_URL = 'chat:friend_list'
-LOGOUT_REDIRECT_URL = 'login'
+LOGOUT_REDIRECT_URL = f"{ACCOUNTS_URL}/logout"
 
 # 7. 지역 및 언어 설정
 LANGUAGE_CODE = 'ko-kr'
