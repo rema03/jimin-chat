@@ -12,9 +12,13 @@ def home_view(request):
     return redirect('login')
 
 
+from chat import accounts as chat_accounts
+
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('accounts/', include('accounts.urls')),
+    path('accounts/login/', chat_accounts.login_view, name='login'),
+    path('accounts/signup/', chat_accounts.signup_view, name='signup'),
+    path('accounts/logout/', chat_accounts.logout_view, name='logout'),
     path('chat/', include('chat.urls')),
     path('', home_view, name='home'),
 ]

@@ -4,7 +4,9 @@ from django.http import JsonResponse, HttpResponseForbidden
 from django.db.models import Q, Count, Max
 from django.views.decorators.http import require_POST
 
-from accounts.models import User
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 from .models import Friendship, ChatMessage
 from .services import (
     get_display_name,

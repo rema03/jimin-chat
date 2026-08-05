@@ -69,7 +69,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'accounts',
     'chat',
     'channels',
 ]
@@ -80,7 +79,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'accounts.middleware.JiminAccountsMiddleware',
+    'chat.accounts.JiminAccountsMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -123,7 +122,7 @@ DATABASES = {
 # 비밀번호 검증은 accounts 서비스에서 처리하므로 로컬에서는 불필요
 AUTH_PASSWORD_VALIDATORS = []
 
-AUTH_USER_MODEL = 'accounts.User'
+AUTH_USER_MODEL = 'chat.User'
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'chat:friend_list'
 

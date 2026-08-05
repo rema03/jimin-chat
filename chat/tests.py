@@ -1,7 +1,9 @@
 from django.test import TestCase
 from django.urls import reverse
 
-from accounts.models import User
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 from .models import ChatMessage
 from .services import build_room_name
 
