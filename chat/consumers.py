@@ -8,6 +8,8 @@ from .services import get_other_user_for_room, is_room_participant
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
+    """실시간 1:1 채팅 WebSocket 컨슈머"""
+
     async def connect(self):
         user = self.scope['user']
         self.room_name = self.scope['url_route']['kwargs']['room_name']
@@ -17,18 +19,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
             await self.close()
             return
 
-        await self.channel_layer.group_add(
-            self.room_group_name,
-            self.channel_name
-        )
+        await self.channel_layer.group_add(self.room_group_name, self.channel_name)
         await self.accept()
 
     async def disconnect(self, close_code):
-        # 그룹 탈퇴
-        await self.channel_layer.group_discard(
-            self.room_group_name,
-            self.channel_name
-        )
+        await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
 
     async def receive(self, text_data):
         data = json.loads(text_data)
@@ -51,15 +46,15 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 'type': 'chat_message',
                 'message': message,
                 'image_url': image_url,
-                'sender': user.username
-            }
+                'sender': user.username,
+            },
         )
 
     async def chat_message(self, event):
         await self.send(text_data=json.dumps({
             'message': event['message'],
             'image_url': event['image_url'],
-            'sender': event['sender']
+            'sender': event['sender'],
         }))
 
     @database_sync_to_async
@@ -67,7 +62,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
         receiver = get_other_user_for_room(room_name, user)
         if not receiver:
             return None
-
         return ChatMessage.objects.create(
             sender=user,
             receiver=receiver,

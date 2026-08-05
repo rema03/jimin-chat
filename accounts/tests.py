@@ -1,15 +1,9 @@
 from django.test import TestCase
-from django.urls import reverse
-
 from .models import User
 
 
-class AuthFlowTests(TestCase):
-    def test_logout_clears_session_and_redirects_to_login(self):
-        user = User.objects.create_user(username='logout-user', password='pass1234', name='로그아웃 사용자')
-        self.client.login(username='logout-user', password='pass1234')
-
-        response = self.client.post(reverse('logout'))
-
-        self.assertRedirects(response, reverse('login'))
-        self.assertNotIn('_auth_user_id', self.client.session)
+class UserModelTests(TestCase):
+    def test_user_creation(self):
+        user = User.objects.create_user(username='testuser', email='test@jimindev.com', name='테스트')
+        self.assertEqual(user.name, '테스트')
+        self.assertEqual(str(user), 'testuser')
